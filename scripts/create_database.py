@@ -8,6 +8,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 from app.core.database import Base, engine
 from app.models.user import User
+from app.models.conversation import Conversation
 
 db_path = Path(engine.url.database)
 db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -16,5 +17,6 @@ Base.metadata.create_all(bind=engine)
 
 print(f"Database ready: {db_path}")
 print("Tables:")
+
 for table in Base.metadata.tables:
     print(f" - {table}")
