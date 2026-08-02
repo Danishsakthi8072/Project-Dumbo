@@ -1,8 +1,13 @@
 from fastapi import APIRouter, Depends
 
+from app.ai.chat import ChatService
 from app.core.config import settings
-from app.core.dependencies import get_user_service
+from app.core.dependencies import (
+    get_chat_service,
+    get_user_service,
+)
 from app.core.security import get_current_user_id
+from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.user import (
     Token,
     UserCreate,
@@ -62,3 +67,16 @@ def get_me(
     service: UserService = Depends(get_user_service),
 ):
     return service.get_current_user(user_id)
+
+
+@router.post(
+    "/chat",
+    response_model=ChatResponse,
+)
+def chat(
+    request: ChatRequest,
+    service: ChatService = Depends(get_chat_service),
+):
+    return ChatResponse(
+        response=service.chat(request.message)
+    )
