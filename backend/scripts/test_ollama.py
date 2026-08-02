@@ -1,3 +1,4 @@
+from app.ai.manager import AIManager
 from app.ai.models import AIModel
 from app.ai.ollama_provider import OllamaProvider
 
@@ -8,11 +9,14 @@ model = AIModel(
 )
 
 provider = OllamaProvider()
-provider.load_model(model)
+
+manager = AIManager()
+manager.load_provider(provider)
+manager.load_model(model)
 
 print("Sending prompt...")
 
-response = provider.generate(
+response = manager.generate(
     "Say hello to Project Dumbo in one sentence."
 )
 
