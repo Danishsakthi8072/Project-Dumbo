@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.ai.chat import ChatService
+from app.services.chat_service import ChatService
 from app.core.config import settings
 from app.core.dependencies import (
     get_chat_service,
@@ -77,6 +77,11 @@ def chat(
     request: ChatRequest,
     service: ChatService = Depends(get_chat_service),
 ):
+    response = service.chat(
+        conversation_id=request.conversation_id,
+        prompt=request.message,
+    )
+
     return ChatResponse(
-        response=service.chat(request.message)
+        response=response,
     )
