@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from ollama import Client
 
 from app.ai.models import AIModel
@@ -30,6 +32,10 @@ class OllamaProvider(AIProvider):
         if self.model is None:
             raise RuntimeError("No AI model loaded.")
 
+        print("\n========== MESSAGES SENT TO OLLAMA ==========")
+        pprint(messages)
+        print("=============================================\n")
+
         response = self.client.chat(
             model=self.model.name,
             messages=messages,
@@ -43,6 +49,10 @@ class OllamaProvider(AIProvider):
     ):
         if self.model is None:
             raise RuntimeError("No AI model loaded.")
+
+        print("\n========== MESSAGES SENT TO OLLAMA ==========")
+        pprint(messages)
+        print("=============================================\n")
 
         stream = self.client.chat(
             model=self.model.name,

@@ -1,8 +1,13 @@
+from collections import defaultdict
+
 from app.ai.context_builder import ContextBuilder
 from app.ai.manager import AIManager
 from app.ai.prompt_engine import PromptEngine
 from app.ai.rag.context_formatter import ContextFormatter
 from app.ai.rag.retriever import Retriever
+from app.repositories.document_repository import (
+    DocumentRepository,
+)
 from app.services.conversation_service import ConversationService
 
 
@@ -11,9 +16,11 @@ class ChatService:
         self,
         manager: AIManager,
         conversation_service: ConversationService,
+        document_repository: DocumentRepository,
     ):
         self.manager = manager
         self.conversation_service = conversation_service
+        self.document_repository = document_repository
 
         prompt_engine = PromptEngine()
         self.context_builder = ContextBuilder(prompt_engine)
@@ -25,6 +32,7 @@ class ChatService:
         self,
         conversation_id: str,
         prompt: str,
+        document_id: int | None = None,
     ) -> tuple[list[dict], list[dict]]:
         self.conversation_service.add_user_message(
             conversation_id=conversation_id,
@@ -40,6 +48,7 @@ class ChatService:
         retrieved_chunks = self.retriever.retrieve(
             query=prompt,
             limit=5,
+            document_id=document_id,
         )
 
         rag_context, sources = self.context_formatter.format(
@@ -53,9 +62,9 @@ class ChatService:
                     "role": "system",
                     "content": (
                         "You are Project Dumbo.\n\n"
-                        "Answer ONLY using the retrieved document "
+                        "Answer using ONLY the retrieved document "
                         "context whenever possible.\n\n"
-                        "Retrieved Document Context:\n\n"
+                        "Retrieved Context:\n\n"
                         f"{rag_context}"
                     ),
                 },
@@ -63,42 +72,73 @@ class ChatService:
 
         return context, sources
 
+    def _format_sources(
+        self,
+        sources: list[dict],
+    ) -> str:
+        if not sources:
+            return ""
+
+        grouped = defaultdict(list)
+
+        for source in sources:
+            document = self.document_repository.get_by_id(
+                source["document_id"]
+            )
+
+            filename = (
+                document.original_filename
+                if document
+                else f"Document {source['document_id']}"
+            )
+
+            grouped[filename].append(
+                source["chunk_index"]
+            )
+
+        output = "\n\nSources:\n"
+
+        for filename, chunks in grouped.items():
+            chunks = sorted(set(chunks))
+
+            output += (
+                f"- {filename} "
+                f"(Chunks: {', '.join(map(str, chunks))})\n"
+            )
+
+        return output
+
     def chat(
         self,
         conversation_id: str,
         prompt: str,
+        document_id: int | None = None,
     ) -> str:
         context, sources = self._build_context(
             conversation_id,
             prompt,
+            document_id,
         )
 
         response = self.manager.chat(context)
 
         self.conversation_service.add_assistant_message(
-            conversation_id=conversation_id,
-            message=response,
+            conversation_id,
+            response,
         )
 
-        if sources:
-            response += "\n\nSources:\n"
-
-            for source in sources:
-                response += (
-                    f"- Document ID: {source['document_id']}, "
-                    f"Chunk: {source['chunk_index']}\n"
-                )
-
-        return response
+        return response + self._format_sources(sources)
 
     def stream_chat(
         self,
         conversation_id: str,
         prompt: str,
+        document_id: int | None = None,
     ):
         context, sources = self._build_context(
             conversation_id,
             prompt,
+            document_id,
         )
 
         full_response = ""
@@ -107,21 +147,15 @@ class ChatService:
             full_response += chunk
             yield chunk
 
-        if sources:
-            citation_text = "\n\nSources:\n"
+        source_text = self._format_sources(sources)
 
-            for source in sources:
-                citation_text += (
-                    f"- Document ID: {source['document_id']}, "
-                    f"Chunk: {source['chunk_index']}\n"
-                )
-
-            full_response += citation_text
-            yield citation_text
+        if source_text:
+            full_response += source_text
+            yield source_text
 
         self.conversation_service.add_assistant_message(
-            conversation_id=conversation_id,
-            message=full_response,
+            conversation_id,
+            full_response,
         )
 
     def clear_memory(
@@ -129,5 +163,5 @@ class ChatService:
         conversation_id: str,
     ):
         self.conversation_service.clear(
-            conversation_id=conversation_id,
+            conversation_id,
         )

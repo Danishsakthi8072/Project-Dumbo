@@ -16,18 +16,30 @@ class Retriever:
         self,
         query: str,
         limit: int = 5,
+        document_id: int | None = None,
     ) -> list[dict]:
         """
         Retrieve the top matching chunks.
+
+        If document_id is provided, only search
+        within that document.
         """
 
         query_embedding = self.embedding_service.embed(
             query
         )
 
+        where = None
+
+        if document_id is not None:
+            where = {
+                "document_id": document_id,
+            }
+
         results = self.vector_store.search(
             embedding=query_embedding,
             limit=limit,
+            where=where,
         )
 
         documents = results.get("documents", [[]])[0]

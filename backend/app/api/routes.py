@@ -45,6 +45,7 @@ def health():
 # Users
 # -----------------------------
 
+
 @router.get("/users", response_model=list[UserResponse])
 def list_users(
     service: UserService = Depends(get_user_service),
@@ -84,6 +85,7 @@ def get_me(
 # Chat
 # -----------------------------
 
+
 @router.post(
     "/chat",
     response_model=ChatResponse,
@@ -95,6 +97,7 @@ def chat(
     response = service.chat(
         conversation_id=request.conversation_id,
         prompt=request.message,
+        document_id=request.document_id,
     )
 
     return ChatResponse(
@@ -111,6 +114,7 @@ def stream_chat(
         service.stream_chat(
             conversation_id=request.conversation_id,
             prompt=request.message,
+            document_id=request.document_id,
         ),
         media_type="text/plain",
     )
@@ -119,6 +123,7 @@ def stream_chat(
 # -----------------------------
 # Documents
 # -----------------------------
+
 
 @router.post(
     "/documents/upload",

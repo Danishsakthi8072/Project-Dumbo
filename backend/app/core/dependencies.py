@@ -130,8 +130,12 @@ def get_chat_service(
     conversation_service: ConversationService = Depends(
         get_conversation_service,
     ),
+    document_repository: DocumentRepository = Depends(
+        get_document_repository,
+    ),
 ) -> ChatService:
     return ChatService(
         manager=ai_manager,
         conversation_service=conversation_service,
+        document_repository=document_repository,
     )
