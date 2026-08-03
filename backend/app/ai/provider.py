@@ -27,6 +27,16 @@ class AIProvider(ABC):
         pass
 
     @abstractmethod
+    def stream_chat(
+        self,
+        messages: list[dict],
+    ):
+        """
+        Stream the model response chunk by chunk.
+        """
+        pass
+
+    @abstractmethod
     def embeddings(
         self,
         text: str,

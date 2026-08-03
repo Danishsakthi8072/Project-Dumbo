@@ -47,6 +47,12 @@ class AIManager:
 
         return self.current_provider.chat(messages)
 
+    def stream_chat(self, messages: list[dict]):
+        if not self.is_loaded():
+            raise RuntimeError("No AI model loaded.")
+
+        yield from self.current_provider.stream_chat(messages)
+
     def embeddings(self, text: str):
         if not self.is_loaded():
             raise RuntimeError("No AI model loaded.")

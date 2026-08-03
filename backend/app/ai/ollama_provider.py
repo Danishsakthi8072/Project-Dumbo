@@ -37,6 +37,24 @@ class OllamaProvider(AIProvider):
 
         return response["message"]["content"]
 
+    def stream_chat(
+        self,
+        messages: list[dict],
+    ):
+        if self.model is None:
+            raise RuntimeError("No AI model loaded.")
+
+        stream = self.client.chat(
+            model=self.model.name,
+            messages=messages,
+            stream=True,
+        )
+
+        for chunk in stream:
+            content = chunk.get("message", {}).get("content", "")
+            if content:
+                yield content
+
     def embeddings(self, text: str):
         if self.model is None:
             raise RuntimeError("No AI model loaded.")

@@ -16,11 +16,11 @@ class ChatService:
         prompt_engine = PromptEngine()
         self.context_builder = ContextBuilder(prompt_engine)
 
-    def chat(
+    def _build_context(
         self,
         conversation_id: str,
         prompt: str,
-    ) -> str:
+    ) -> list[dict]:
         self.conversation_service.add_user_message(
             conversation_id=conversation_id,
             message=prompt,
@@ -30,7 +30,17 @@ class ChatService:
             conversation_id=conversation_id,
         )
 
-        context = self.context_builder.build(conversation)
+        return self.context_builder.build(conversation)
+
+    def chat(
+        self,
+        conversation_id: str,
+        prompt: str,
+    ) -> str:
+        context = self._build_context(
+            conversation_id,
+            prompt,
+        )
 
         response = self.manager.chat(context)
 
@@ -40,6 +50,27 @@ class ChatService:
         )
 
         return response
+
+    def stream_chat(
+        self,
+        conversation_id: str,
+        prompt: str,
+    ):
+        context = self._build_context(
+            conversation_id,
+            prompt,
+        )
+
+        full_response = ""
+
+        for chunk in self.manager.stream_chat(context):
+            full_response += chunk
+            yield chunk
+
+        self.conversation_service.add_assistant_message(
+            conversation_id=conversation_id,
+            message=full_response,
+        )
 
     def clear_memory(
         self,

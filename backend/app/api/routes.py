@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 
 from app.services.chat_service import ChatService
 from app.core.config import settings
@@ -84,4 +85,18 @@ def chat(
 
     return ChatResponse(
         response=response,
+    )
+
+
+@router.post("/chat/stream")
+def stream_chat(
+    request: ChatRequest,
+    service: ChatService = Depends(get_chat_service),
+):
+    return StreamingResponse(
+        service.stream_chat(
+            conversation_id=request.conversation_id,
+            prompt=request.message,
+        ),
+        media_type="text/plain",
     )
