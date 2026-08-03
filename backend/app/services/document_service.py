@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from fastapi import UploadFile
 
+from app.ai.text_extractor import TextExtractor
 from app.models.document import Document
 from app.repositories.document_repository import DocumentRepository
 
@@ -13,6 +14,7 @@ class DocumentService:
         repository: DocumentRepository,
     ):
         self.repository = repository
+        self.extractor = TextExtractor()
 
         project_root = Path(__file__).resolve().parents[3]
         self.upload_dir = project_root / "uploads"
@@ -35,11 +37,16 @@ class DocumentService:
         with open(file_path, "wb") as buffer:
             buffer.write(file.file.read())
 
+        extracted_text = self.extractor.extract(
+            str(file_path)
+        )
+
         document = Document(
             filename=unique_filename,
             original_filename=file.filename,
             file_type=extension.replace(".", ""),
             file_path=str(file_path),
+            extracted_text=extracted_text,
         )
 
         return self.repository.create(document)

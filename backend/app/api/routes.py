@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.core.config import settings
@@ -9,7 +9,10 @@ from app.core.dependencies import (
 )
 from app.core.security import get_current_user_id
 from app.schemas.chat import ChatRequest, ChatResponse
-from app.schemas.document import DocumentResponse
+from app.schemas.document import (
+    DocumentDetailResponse,
+    DocumentResponse,
+)
 from app.schemas.user import (
     Token,
     UserCreate,
@@ -137,3 +140,41 @@ def list_documents(
     service: DocumentService = Depends(get_document_service),
 ):
     return service.list_documents()
+
+
+@router.get(
+    "/documents/{document_id}",
+    response_model=DocumentDetailResponse,
+)
+def get_document(
+    document_id: int,
+    service: DocumentService = Depends(get_document_service),
+):
+    document = service.get_document(document_id)
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found.",
+        )
+
+    return document
+
+
+@router.delete(
+    "/documents/{document_id}",
+    status_code=204,
+)
+def delete_document(
+    document_id: int,
+    service: DocumentService = Depends(get_document_service),
+):
+    document = service.get_document(document_id)
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found.",
+        )
+
+    service.delete_document(document)

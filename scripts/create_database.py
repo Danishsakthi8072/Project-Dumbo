@@ -12,7 +12,11 @@ from app.models.document import Document
 from app.models.user import User
 
 db_path = Path(engine.url.database)
-db_path.parent.mkdir(parents=True, exist_ok=True)
+
+db_path.parent.mkdir(
+    parents=True,
+    exist_ok=True,
+)
 
 Base.metadata.create_all(bind=engine)
 

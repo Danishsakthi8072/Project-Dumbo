@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -33,6 +33,12 @@ class Document(Base):
     file_path: Mapped[str] = mapped_column(
         String,
         nullable=False,
+    )
+
+    extracted_text: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        default="",
     )
 
     uploaded_at: Mapped[datetime] = mapped_column(
