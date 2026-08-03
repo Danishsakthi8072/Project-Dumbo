@@ -1,14 +1,16 @@
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from app.services.chat_service import ChatService
 from app.ai.manager import AIManager
 from app.ai.models import AIModel
 from app.ai.ollama_provider import OllamaProvider
 from app.core.database import get_db
 from app.repositories.conversation_repository import ConversationRepository
+from app.repositories.document_repository import DocumentRepository
 from app.repositories.user_repository import UserRepository
+from app.services.chat_service import ChatService
 from app.services.conversation_service import ConversationService
+from app.services.document_service import DocumentService
 from app.services.user_service import UserService
 
 
@@ -44,6 +46,24 @@ def get_conversation_service(
     ),
 ) -> ConversationService:
     return ConversationService(repository)
+
+
+# -----------------------------
+# Document Dependencies
+# -----------------------------
+
+def get_document_repository(
+    db: Session = Depends(get_db),
+) -> DocumentRepository:
+    return DocumentRepository(db)
+
+
+def get_document_service(
+    repository: DocumentRepository = Depends(
+        get_document_repository
+    ),
+) -> DocumentService:
+    return DocumentService(repository)
 
 
 # -----------------------------

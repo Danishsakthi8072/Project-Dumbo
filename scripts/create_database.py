@@ -7,8 +7,9 @@ BACKEND_DIR = PROJECT_ROOT / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
 
 from app.core.database import Base, engine
-from app.models.user import User
 from app.models.conversation import Conversation
+from app.models.document import Document
+from app.models.user import User
 
 db_path = Path(engine.url.database)
 db_path.parent.mkdir(parents=True, exist_ok=True)

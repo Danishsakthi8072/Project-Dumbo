@@ -1,20 +1,23 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import StreamingResponse
 
-from app.services.chat_service import ChatService
 from app.core.config import settings
 from app.core.dependencies import (
     get_chat_service,
+    get_document_service,
     get_user_service,
 )
 from app.core.security import get_current_user_id
 from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.document import DocumentResponse
 from app.schemas.user import (
     Token,
     UserCreate,
     UserLogin,
     UserResponse,
 )
+from app.services.chat_service import ChatService
+from app.services.document_service import DocumentService
 from app.services.user_service import UserService
 
 router = APIRouter()
@@ -34,6 +37,10 @@ def root():
 def health():
     return {"status": "healthy"}
 
+
+# -----------------------------
+# Users
+# -----------------------------
 
 @router.get("/users", response_model=list[UserResponse])
 def list_users(
@@ -70,6 +77,10 @@ def get_me(
     return service.get_current_user(user_id)
 
 
+# -----------------------------
+# Chat
+# -----------------------------
+
 @router.post(
     "/chat",
     response_model=ChatResponse,
@@ -100,3 +111,29 @@ def stream_chat(
         ),
         media_type="text/plain",
     )
+
+
+# -----------------------------
+# Documents
+# -----------------------------
+
+@router.post(
+    "/documents/upload",
+    response_model=DocumentResponse,
+    status_code=201,
+)
+def upload_document(
+    file: UploadFile = File(...),
+    service: DocumentService = Depends(get_document_service),
+):
+    return service.upload_document(file)
+
+
+@router.get(
+    "/documents",
+    response_model=list[DocumentResponse],
+)
+def list_documents(
+    service: DocumentService = Depends(get_document_service),
+):
+    return service.list_documents()
