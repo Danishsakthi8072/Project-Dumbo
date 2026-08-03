@@ -1,5 +1,6 @@
 from app.ai.context_builder import ContextBuilder
 from app.ai.manager import AIManager
+from app.ai.prompt_engine import PromptEngine
 from app.services.conversation_service import ConversationService
 
 
@@ -11,7 +12,9 @@ class ChatService:
     ):
         self.manager = manager
         self.conversation_service = conversation_service
-        self.context_builder = ContextBuilder()
+
+        prompt_engine = PromptEngine()
+        self.context_builder = ContextBuilder(prompt_engine)
 
     def chat(
         self,
@@ -23,11 +26,11 @@ class ChatService:
             message=prompt,
         )
 
-        messages = self.conversation_service.get_messages(
+        conversation = self.conversation_service.get_messages(
             conversation_id=conversation_id,
         )
 
-        context = self.context_builder.build(messages)
+        context = self.context_builder.build(conversation)
 
         response = self.manager.chat(context)
 

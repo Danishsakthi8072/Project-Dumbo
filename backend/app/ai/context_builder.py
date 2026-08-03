@@ -1,18 +1,24 @@
-from app.ai.prompts import SYSTEM_PROMPT
+from app.ai.prompt_engine import PromptEngine
 
 
 class ContextBuilder:
+    def __init__(
+        self,
+        prompt_engine: PromptEngine,
+    ):
+        self.prompt_engine = prompt_engine
+
     def build(
         self,
-        messages: list[dict],
+        conversation: list[dict],
     ) -> list[dict]:
-        context = [
+        messages = [
             {
                 "role": "system",
-                "content": SYSTEM_PROMPT,
+                "content": self.prompt_engine.get_system_prompt(),
             }
         ]
 
-        context.extend(messages)
+        messages.extend(conversation)
 
-        return context
+        return messages
