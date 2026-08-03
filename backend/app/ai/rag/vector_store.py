@@ -1,23 +1,29 @@
+from pathlib import Path
+
 from chromadb import PersistentClient
 from chromadb.api.models.Collection import Collection
 
 
 class VectorStore:
-    """
-    Handles storing and retrieving embeddings
-    from ChromaDB.
-    """
-
     def __init__(
         self,
-        path: str = "./chroma_db",
         collection_name: str = "document_chunks",
     ):
-        self.client = PersistentClient(path=path)
+        project_root = Path(__file__).resolve().parents[4]
+        chroma_path = project_root / "backend" / "chroma_db"
+
+        chroma_path.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        self.client = PersistentClient(
+            path=str(chroma_path),
+        )
 
         self.collection: Collection = (
             self.client.get_or_create_collection(
-                name=collection_name
+                name=collection_name,
             )
         )
 
@@ -57,6 +63,11 @@ class VectorStore:
         return self.collection.query(
             query_embeddings=[embedding],
             n_results=limit,
+            include=[
+                "documents",
+                "metadatas",
+                "distances",
+            ],
         )
 
     def delete(
@@ -75,7 +86,5 @@ class VectorStore:
             ids=ids,
         )
 
-    def count(
-        self,
-    ) -> int:
+    def count(self) -> int:
         return self.collection.count()
