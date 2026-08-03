@@ -40,7 +40,7 @@ class DocumentChunkRepository:
             .filter(
                 DocumentChunk.document_id == document_id
             )
-            .order_by(DocumentChunk.chunk_index.asc())
+            .order_by(DocumentChunk.chunk_index)
             .all()
         )
 
@@ -53,7 +53,9 @@ class DocumentChunkRepository:
             .filter(
                 DocumentChunk.document_id == document_id
             )
-            .delete()
+            .delete(
+                synchronize_session=False,
+            )
         )
 
         self.db.commit()

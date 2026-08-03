@@ -4,9 +4,15 @@ from uuid import uuid4
 from fastapi import UploadFile
 
 from app.ai.rag.pipeline import RAGPipeline
+from app.ai.rag.vector_store import VectorStore
 from app.ai.text_extractor import TextExtractor
 from app.models.document import Document
-from app.repositories.document_repository import DocumentRepository
+from app.repositories.document_chunk_repository import (
+    DocumentChunkRepository,
+)
+from app.repositories.document_repository import (
+    DocumentRepository,
+)
 
 
 class DocumentService:
@@ -18,6 +24,7 @@ class DocumentService:
         self.repository = repository
         self.rag_pipeline = rag_pipeline
         self.extractor = TextExtractor()
+        self.vector_store = VectorStore()
 
         project_root = Path(__file__).resolve().parents[3]
         self.upload_dir = project_root / "uploads"
@@ -76,4 +83,29 @@ class DocumentService:
         if file_path.exists():
             file_path.unlink()
 
+        # Delete vectors from ChromaDB
+        chunk_repo = DocumentChunkRepository(
+            self.repository.db
+        )
+
+        chunks = chunk_repo.get_by_document_id(
+            document.id
+        )
+
+        vector_ids = [
+            str(chunk.id)
+            for chunk in chunks
+        ]
+
+        if vector_ids:
+            self.vector_store.delete_many(
+                vector_ids
+            )
+
+        # Delete chunk records
+        chunk_repo.delete_by_document_id(
+            document.id
+        )
+
+        # Delete document
         self.repository.delete(document)
