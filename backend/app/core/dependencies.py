@@ -4,12 +4,19 @@ from sqlalchemy.orm import Session
 from app.ai.manager import AIManager
 from app.ai.models import AIModel
 from app.ai.ollama_provider import OllamaProvider
+from app.ai.rag.pipeline import RAGPipeline
 from app.core.database import get_db
 from app.repositories.conversation_repository import ConversationRepository
+from app.repositories.document_chunk_repository import (
+    DocumentChunkRepository,
+)
 from app.repositories.document_repository import DocumentRepository
 from app.repositories.user_repository import UserRepository
 from app.services.chat_service import ChatService
 from app.services.conversation_service import ConversationService
+from app.services.document_chunk_service import (
+    DocumentChunkService,
+)
 from app.services.document_service import DocumentService
 from app.services.user_service import UserService
 
@@ -42,10 +49,36 @@ def get_conversation_repository(
 
 def get_conversation_service(
     repository: ConversationRepository = Depends(
-        get_conversation_repository
+        get_conversation_repository,
     ),
 ) -> ConversationService:
     return ConversationService(repository)
+
+
+# -----------------------------
+# Document Chunk Dependencies
+# -----------------------------
+
+def get_document_chunk_repository(
+    db: Session = Depends(get_db),
+) -> DocumentChunkRepository:
+    return DocumentChunkRepository(db)
+
+
+def get_document_chunk_service(
+    repository: DocumentChunkRepository = Depends(
+        get_document_chunk_repository,
+    ),
+) -> DocumentChunkService:
+    return DocumentChunkService(repository)
+
+
+def get_rag_pipeline(
+    chunk_service: DocumentChunkService = Depends(
+        get_document_chunk_service,
+    ),
+) -> RAGPipeline:
+    return RAGPipeline(chunk_service)
 
 
 # -----------------------------
@@ -60,10 +93,16 @@ def get_document_repository(
 
 def get_document_service(
     repository: DocumentRepository = Depends(
-        get_document_repository
+        get_document_repository,
+    ),
+    rag_pipeline: RAGPipeline = Depends(
+        get_rag_pipeline,
     ),
 ) -> DocumentService:
-    return DocumentService(repository)
+    return DocumentService(
+        repository=repository,
+        rag_pipeline=rag_pipeline,
+    )
 
 
 # -----------------------------
@@ -89,7 +128,7 @@ def get_ai_manager() -> AIManager:
 
 def get_chat_service(
     conversation_service: ConversationService = Depends(
-        get_conversation_service
+        get_conversation_service,
     ),
 ) -> ChatService:
     return ChatService(

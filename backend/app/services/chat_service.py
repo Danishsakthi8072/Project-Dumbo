@@ -1,6 +1,7 @@
 from app.ai.context_builder import ContextBuilder
 from app.ai.manager import AIManager
 from app.ai.prompt_engine import PromptEngine
+from app.ai.rag.retriever import Retriever
 from app.services.conversation_service import ConversationService
 
 
@@ -16,6 +17,8 @@ class ChatService:
         prompt_engine = PromptEngine()
         self.context_builder = ContextBuilder(prompt_engine)
 
+        self.retriever = Retriever()
+
     def _build_context(
         self,
         conversation_id: str,
@@ -30,7 +33,32 @@ class ChatService:
             conversation_id=conversation_id,
         )
 
-        return self.context_builder.build(conversation)
+        context = self.context_builder.build(conversation)
+
+        retrieved_chunks = self.retriever.retrieve(
+            query=prompt,
+            limit=5,
+        )
+
+        if retrieved_chunks:
+            rag_context = "\n\n".join(
+                chunk["text"]
+                for chunk in retrieved_chunks
+            )
+
+            context.insert(
+                1,
+                {
+                    "role": "system",
+                    "content": (
+                        "Use the following document context "
+                        "to answer the user's question.\n\n"
+                        f"{rag_context}"
+                    ),
+                },
+            )
+
+        return context
 
     def chat(
         self,

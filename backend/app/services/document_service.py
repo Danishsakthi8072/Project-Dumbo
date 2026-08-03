@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from fastapi import UploadFile
 
+from app.ai.rag.pipeline import RAGPipeline
 from app.ai.text_extractor import TextExtractor
 from app.models.document import Document
 from app.repositories.document_repository import DocumentRepository
@@ -12,8 +13,10 @@ class DocumentService:
     def __init__(
         self,
         repository: DocumentRepository,
+        rag_pipeline: RAGPipeline,
     ):
         self.repository = repository
+        self.rag_pipeline = rag_pipeline
         self.extractor = TextExtractor()
 
         project_root = Path(__file__).resolve().parents[3]
@@ -49,7 +52,11 @@ class DocumentService:
             extracted_text=extracted_text,
         )
 
-        return self.repository.create(document)
+        document = self.repository.create(document)
+
+        self.rag_pipeline.process_document(document)
+
+        return document
 
     def list_documents(self):
         return self.repository.list_documents()
